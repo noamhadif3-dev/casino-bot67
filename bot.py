@@ -1586,5 +1586,5 @@ async def help_command(ctx):
 
 if __name__ == "__main__":
     # Replace with your bot token
-    TOKEN = 'YOUR_BOT_TOKEN_HERE'
+    TOKEN = os.getenv('MTQ3MDAzMzMwNzc0NzA5MDcwMA.GSQCHD.hrApPQxX-1RHzzxHRch1zaI60EPgUXS0soE62U')
     bot.run(TOKEN)
