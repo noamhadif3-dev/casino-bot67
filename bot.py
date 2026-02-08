@@ -1584,6 +1584,6 @@ async def help_command(ctx):
 # RUN BOT
 # ============================================================================
 
-if __name__ == "__main__":   
-     TOKEN = os.getenv('DISCORD_TOKEN')
+if __name__ == "__main__":
+    TOKEN = os.getenv('DISCORD_TOKEN')
     bot.run(TOKEN)
