@@ -52,15 +52,15 @@ bot = commands.Bot(command_prefix='$', intents=intents, help_command=None)
 # Admin user IDs (replace with your Discord user IDs)
 ADMIN_IDS = [
     1123938672866234378,  # Admin 1
-    #1201162384635613214 ,  # Admin 2
-    #1018848593140002876 ,  # Admin 3
+    1018848593140002876 ,  # Admin 2
+    1201162384635613214 ,  # Admin 3
 ]
 
 # Admin role IDs - Users with these roles can use admin commands (MAX 3)
 # To get role ID: Server Settings > Roles > Right-click role > Copy ID
 ADMIN_ROLE_IDS = [
-    #1470069746777981039 ,  # Role 1
-    #1468004851752632537 ,  # Role 2
+    1470069746777981039 ,  # Role 1
+    1468004851752632537 ,  # Role 2
     # ,  # Role 3
 ]
 
