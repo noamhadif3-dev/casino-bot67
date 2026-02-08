@@ -1,4 +1,4 @@
-"""
+"""import os
 TheCohen Casino Bot - Complete Discord Casino Bot
 Fixed blackjack, MT game with proper display, and admin commands
 
@@ -1585,6 +1585,6 @@ async def help_command(ctx):
 # ============================================================================
 
 if __name__ == "__main__":
-    # Replace with your bot token
-    TOKEN = os.getenv('MTQ3MDAzMzMwNzc0NzA5MDcwMA.GSQCHD.hrApPQxX-1RHzzxHRch1zaI60EPgUXS0soE62U')
-    bot.run(TOKEN)
+    # התיקון הנכון:
+TOKEN = os.getenv('DISCORD_TOKEN')
+bot.run(TOKEN)
