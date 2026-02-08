@@ -15,7 +15,7 @@ SETUP INSTRUCTIONS:
 4. Adjust cooldowns if needed (lines ~38-41)
 5. Add your bot token at the bottom of the file (line ~1587)
 """
-
+import os
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
@@ -1584,8 +1584,6 @@ async def help_command(ctx):
 # RUN BOT
 # ============================================================================
 
-if __name__ == "__main__":
-    # Replace with your bot token
-    TOKEN = 'YOUR_BOT_TOKEN_HERE'
+if __name__ == "__main__":   
+     TOKEN = os.getenv('DISCORD_TOKEN')
     bot.run(TOKEN)
-
