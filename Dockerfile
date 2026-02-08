@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # פקודה להרצת הבוט (וודא שזה השם של הקובץ שלך!)
-CMD ["python", "casino_bot_fixed (1).py"]
+CMD ["python", "bot.py"]
