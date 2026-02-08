@@ -6,28 +6,30 @@ SETUP INSTRUCTIONS:
 1. Add your Discord user IDs to ADMIN_IDS list (lines ~27-31)
    - These users will always have admin permissions
    
-2. Add admin role IDs to ADMIN_ROLE_IDS list (lines ~34-38) - OPTIONAL
+2. Add admin role IDs to ADMIN_ROLE_IDS list (lines ~34-38) - OPTIONAL (MAX 3)
    - Users with these roles will have admin permissions
    - To get role ID: Server Settings > Roles > Right-click role > Copy ID
-   - Example: 1234567890123456  # Casino Manager
+   - Example:1470069746777981039   # Casino Manager
    
-3. Add casino channel IDs to CASINO_CHANNEL_IDS list (lines ~41-46)
-   - To get channel ID: Right-click channel > Copy ID (enable Developer Mode)
-   - Example: 1234567890123456  # #casino-main
-   - Leave empty to check for 'casino' or 'קסינו' in channel name
-   
-4. Adjust cooldowns and auto-delete timer if needed (lines ~49-55)
+3. Adjust cooldowns and auto-delete timer if needed (lines ~41-48)
+   - WORK_COOLDOWN = 3  # 3 minutes
+   - CRIME_COOLDOWN = 3  # 3 minutes
    - AUTO_DELETE_MESSAGES = 10  # Delete bot responses after 10 seconds
-   - Set to 0 to disable auto-delete
+   - Set AUTO_DELETE_MESSAGES to 0 to disable auto-delete
    
-5. Add your bot token at the bottom of the file (line ~1625)
+4. Add your bot token at the bottom of the file (line ~1585)
 
 ECONOMY DATA:
 - All user money is saved in economy.json file
 - Data auto-saves on every transaction
+- Auto-saves every 5 minutes
 - Backup this file regularly to prevent data loss!
+
+COMMANDS WORK EVERYWHERE:
+- All casino and game commands work in any channel
+- No channel restrictions
 """
-import os
+
 import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View
@@ -49,27 +51,18 @@ bot = commands.Bot(command_prefix='$', intents=intents, help_command=None)
 
 # Admin user IDs (replace with your Discord user IDs)
 ADMIN_IDS = [
-    1123938672866234378,  # Add your admin user IDs here
-    # 1018848593140002876,
-    # 1055196925189685339,
+    1123938672866234378,  # Admin 1
+    #1201162384635613214 ,  # Admin 2
+    #1018848593140002876 ,  # Admin 3
 ]
 
-# Admin role IDs - Users with these roles can use admin commands
+# Admin role IDs - Users with these roles can use admin commands (MAX 3)
 # To get role ID: Server Settings > Roles > Right-click role > Copy ID
 ADMIN_ROLE_IDS = [
-    # 1470069746777981039,  # Example: Casino Manager
-    # 1468004851752632537,  # Example: Head Admin
-    # 1468414811707801610,  # Example: Bot Manager
+    #1470069746777981039 ,  # Role 1
+    #1468004851752632537 ,  # Role 2
+    # ,  # Role 3
 ]
-
-# Casino channel IDs - Only these channels can use casino/game commands
-# To get channel ID: Right-click channel > Copy ID (enable Developer Mode)
-CASINO_CHANNEL_IDS = [
-    # 1469451103903940608,  # Example: #casino-main
-    # 1469451273978773679,1469451332548034695,1469451387770376444  # Example: #casino-vip
-    # 1470124214164918567,  # Example: #gambling
-]
-# If empty [], will check for 'casino' or 'קסינו' in channel name
 
 # Cooldowns (in minutes)
 WORK_COOLDOWN = 3
@@ -101,7 +94,7 @@ async def auto_save():
 
 
 # ============================================================================
-# CASINO CHANNEL CHECK
+# ADMIN CHECK
 # ============================================================================
 
 def is_admin(ctx):
@@ -117,24 +110,6 @@ def is_admin(ctx):
             return True
     
     return False
-
-def is_casino_channel(ctx):
-    """Check if command is used in a casino channel"""
-    # If specific channel IDs are set, use those
-    if CASINO_CHANNEL_IDS:
-        return ctx.channel.id in CASINO_CHANNEL_IDS
-    # Otherwise, check channel name
-    channel_name = ctx.channel.name.lower()
-    return 'casino' in channel_name or 'קסינו' in channel_name
-
-async def casino_channel_only(ctx):
-    """Send error message if not in casino channel"""
-    if not is_casino_channel(ctx):
-        embed = discord.Embed(color=0xED4245)
-        embed.description = "🎰 Please use casino commands only in casino channels!"
-        await ctx.send(embed=embed, delete_after=5)
-        return False
-    return True
 
 async def send_response(ctx, content=None, embed=None, view=None, delete_after=None):
     """Helper function to send responses with optional auto-delete"""
@@ -460,9 +435,6 @@ async def pay(ctx, member: discord.Member, amount: str):
 @bot.command(name='work')
 async def work(ctx):
     """Work for money - $work (3 min cooldown)"""
-    if not await casino_channel_only(ctx):
-        return
-    
     user_id = str(ctx.author.id)
     user = economy.get_user(ctx.author.id)
     
@@ -492,9 +464,6 @@ async def work(ctx):
 @bot.command(name='crime')
 async def crime(ctx):
     """Commit a crime - $crime (3 min cooldown)"""
-    if not await casino_channel_only(ctx):
-        return
-    
     user_id = str(ctx.author.id)
     user = economy.get_user(ctx.author.id)
     
@@ -535,9 +504,6 @@ async def crime(ctx):
 @bot.command(name='rob')
 async def rob(ctx, member: discord.Member):
     """Rob someone - $rob <@user> (7 min cooldown)"""
-    if not await casino_channel_only(ctx):
-        return
-    
     if member.id == ctx.author.id:
         await ctx.send("❌ You can't rob yourself!")
         return
@@ -788,9 +754,6 @@ class MTView(View):
 @bot.command(name='mt')
 async def mt_game(ctx, amount: str):
     """Play MT game (3x5 mines) - $mt <amount/all>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 100:
@@ -891,9 +854,6 @@ class SlotView(View):
 @bot.command(name='sm', aliases=['slots'])
 async def slotmachine(ctx, amount: str):
     """Play slot machine - $sm <amount/all>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -986,9 +946,6 @@ class ChickenView(View):
 @bot.command(name='cf', aliases=['chicken'])
 async def chickenfight(ctx, amount: str):
     """Chicken fight - $cf <amount>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -1071,9 +1028,6 @@ class CoinflipView(View):
 @bot.command(name='ht', aliases=['coinflip'])
 async def headstails(ctx, amount: str):
     """Heads or tails - $ht <amount>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -1162,9 +1116,6 @@ class RPSView(View):
 @bot.command(name='rps')
 async def rockpaperscissors(ctx, amount: str):
     """Rock Paper Scissors - $rps <amount>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -1245,9 +1196,6 @@ class HighLowView(View):
 @bot.command(name='hl', aliases=['highlow'])
 async def highlow(ctx, amount: str):
     """High or low game - $hl <amount>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -1384,9 +1332,6 @@ class BlackjackView(View):
 @bot.command(name='bj', aliases=['blackjack'])
 async def blackjack(ctx, amount: str):
     """Play blackjack - $bj <amount/all>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -1529,9 +1474,6 @@ class RouletteView(View):
 @bot.command(name='roulette')
 async def roulette(ctx, amount: str):
     """Play roulette - $roulette <amount>"""
-    if not await casino_channel_only(ctx):
-        return
-    
     bet = parse_amount(amount, ctx.author.id, use_cash=True)
     
     if bet is None or bet < 10:
@@ -1640,4 +1582,3 @@ async def help_command(ctx):
 if __name__ == "__main__":
     TOKEN = os.getenv('DISCORD_TOKEN')
     bot.run(TOKEN)
-  
