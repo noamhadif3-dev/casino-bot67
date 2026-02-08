@@ -29,7 +29,7 @@ COMMANDS WORK EVERYWHERE:
 - All casino and game commands work in any channel
 - No channel restrictions
 """
-
+import os
 import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View
