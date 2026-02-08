@@ -40,12 +40,12 @@ ADMIN_IDS = [123456789012345678]  # Add your admin IDs here
 
 # Admin role IDs - Users with these roles can use admin commands
 # To get role ID: Right-click role > Copy ID (enable Developer Mode)
-# Example: ADMIN_ROLE_IDS = [1234567890123456, 9876543210987654]
-ADMIN_ROLE_IDS = []  # Add role IDs here
+# Example: ADMIN_ROLE_IDS = [1123938672866234378, 9876543210987654]
+ADMIN_ROLE_IDS = [1468004851752632537,1444695109190029378]  # Add role IDs here
 
 # Casino channel IDs - Add your casino channel IDs here
 # Example: CASINO_CHANNEL_IDS = [123456789012345678, 987654321098765432]
-CASINO_CHANNEL_IDS = []  # If empty, will check for 'casino' or 'קסינו' in channel name
+CASINO_CHANNEL_IDS = [1469451103903940608,1469451273978773679,1469451332548034695,1469451387770376444]  # If empty, will check for 'casino' or 'קסינו' in channel name
 
 # Cooldowns (in minutes)
 WORK_COOLDOWN = 3
