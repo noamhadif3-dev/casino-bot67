@@ -7,10 +7,10 @@ SETUP INSTRUCTIONS:
 2. Add admin role IDs to ADMIN_ROLE_IDS list (line ~30) - OPTIONAL
    - Users with these roles will have admin permissions
    - To get role ID: Server Settings > Roles > Right-click role > Copy ID
-   - Example: ADMIN_ROLE_IDS = [1234567890, 9876543210]
+   - Example: ADMIN_ROLE_IDS = [1234567890, 9876543210,1123938672866234378]
 3. Add your casino channel IDs to CASINO_CHANNEL_IDS list (line ~35)
    - To get channel ID: Right-click channel > Copy ID (enable Developer Mode in Discord settings)
-   - Example: CASINO_CHANNEL_IDS = [1234567890, 9876543210, 1470124214164918567]
+   - Example: CASINO_CHANNEL_IDS = []
    - Leave empty [] to check for 'casino' or 'קסינו' in channel name
 4. Adjust cooldowns if needed (lines ~38-41)
 5. Add your bot token at the bottom of the file (line ~1587)
