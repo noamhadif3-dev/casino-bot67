@@ -1,23 +1,35 @@
 """
 TheCohen Casino Bot - Complete Discord Casino Bot
-Fixed blackjack, MT game with proper display, and admin commands
+Fixed blackjack, MT game with proper display, admin commands, and persistent economy
 
 SETUP INSTRUCTIONS:
-1. Add your Discord user ID to ADMIN_IDS list (line ~26)
-2. Add admin role IDs to ADMIN_ROLE_IDS list (line ~30) - OPTIONAL
+1. Add your Discord user IDs to ADMIN_IDS list (lines ~27-31)
+   - These users will always have admin permissions
+   
+2. Add admin role IDs to ADMIN_ROLE_IDS list (lines ~34-38) - OPTIONAL
    - Users with these roles will have admin permissions
    - To get role ID: Server Settings > Roles > Right-click role > Copy ID
-   - Example: ADMIN_ROLE_IDS = [1234567890, 9876543210,1123938672866234378]
-3. Add your casino channel IDs to CASINO_CHANNEL_IDS list (line ~35)
-   - To get channel ID: Right-click channel > Copy ID (enable Developer Mode in Discord settings)
-   - Example: CASINO_CHANNEL_IDS = []
-   - Leave empty [] to check for 'casino' or 'קזינו' in channel name
-4. Adjust cooldowns if needed (lines ~38-41)
-5. Add your bot token at the bottom of the file (line ~1587)
+   - Example: 1234567890123456  # Casino Manager
+   
+3. Add casino channel IDs to CASINO_CHANNEL_IDS list (lines ~41-46)
+   - To get channel ID: Right-click channel > Copy ID (enable Developer Mode)
+   - Example: 1234567890123456  # #casino-main
+   - Leave empty to check for 'casino' or 'קסינו' in channel name
+   
+4. Adjust cooldowns and auto-delete timer if needed (lines ~49-55)
+   - AUTO_DELETE_MESSAGES = 10  # Delete bot responses after 10 seconds
+   - Set to 0 to disable auto-delete
+   
+5. Add your bot token at the bottom of the file (line ~1625)
+
+ECONOMY DATA:
+- All user money is saved in economy.json file
+- Data auto-saves on every transaction
+- Backup this file regularly to prevent data loss!
 """
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ui import Button, View
 import random
 import json
@@ -36,16 +48,28 @@ intents.members = True
 bot = commands.Bot(command_prefix='$', intents=intents, help_command=None)
 
 # Admin user IDs (replace with your Discord user IDs)
-ADMIN_IDS = [123456789012345678]  # Add your admin IDs here
+ADMIN_IDS = [
+    1123938672866234378,  # Add your admin user IDs here
+    # 1018848593140002876,
+    # 1055196925189685339,
+]
 
 # Admin role IDs - Users with these roles can use admin commands
-# To get role ID: Right-click role > Copy ID (enable Developer Mode)
-# Example: ADMIN_ROLE_IDS = [1123938672866234378, 9876543210987654]
-ADMIN_ROLE_IDS = [1468004851752632537,1444695109190029378]  # Add role IDs here
+# To get role ID: Server Settings > Roles > Right-click role > Copy ID
+ADMIN_ROLE_IDS = [
+    # 1470069746777981039,  # Example: Casino Manager
+    # 1468004851752632537,  # Example: Head Admin
+    # 1468414811707801610,  # Example: Bot Manager
+]
 
-# Casino channel IDs - Add your casino channel IDs here
-# Example: CASINO_CHANNEL_IDS = [123456789012345678, 987654321098765432]
-CASINO_CHANNEL_IDS = [1469451103903940608,1469451273978773679,1469451332548034695,1469451387770376444]  # If empty, will check for 'casino' or 'קסינו' in channel name
+# Casino channel IDs - Only these channels can use casino/game commands
+# To get channel ID: Right-click channel > Copy ID (enable Developer Mode)
+CASINO_CHANNEL_IDS = [
+    # 1469451103903940608,  # Example: #casino-main
+    # 1469451273978773679,1469451332548034695,1469451387770376444  # Example: #casino-vip
+    # 1470124214164918567,  # Example: #gambling
+]
+# If empty [], will check for 'casino' or 'קסינו' in channel name
 
 # Cooldowns (in minutes)
 WORK_COOLDOWN = 3
@@ -53,10 +77,27 @@ CRIME_COOLDOWN = 3
 ROB_COOLDOWN = 7
 HELP_COOLDOWN = 1
 
+# Auto-delete command responses (in seconds, 0 = don't delete)
+AUTO_DELETE_MESSAGES = 10
+
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} is online!')
+    print(f'Economy data loaded: {len(economy.data)} users')
     await bot.change_presence(activity=discord.Game(name="🎰 $help"))
+    auto_save.start()  # Start auto-save task
+
+@bot.event
+async def on_disconnect():
+    """Save economy data when bot disconnects"""
+    economy.save_data()
+    print('Economy data saved on disconnect')
+
+@tasks.loop(minutes=5)
+async def auto_save():
+    """Auto-save economy data every 5 minutes"""
+    economy.save_data()
+    print(f'[{datetime.now().strftime("%H:%M:%S")}] Auto-saved economy data')
 
 
 # ============================================================================
@@ -94,6 +135,14 @@ async def casino_channel_only(ctx):
         await ctx.send(embed=embed, delete_after=5)
         return False
     return True
+
+async def send_response(ctx, content=None, embed=None, view=None, delete_after=None):
+    """Helper function to send responses with optional auto-delete"""
+    if delete_after is None and AUTO_DELETE_MESSAGES > 0:
+        delete_after = AUTO_DELETE_MESSAGES
+    
+    return await ctx.send(content=content, embed=embed, view=view, 
+                         delete_after=delete_after if delete_after and delete_after > 0 else None)
 
 
 # ============================================================================
@@ -176,6 +225,10 @@ class EconomyManager:
 
 economy = EconomyManager()
 
+# IMPORTANT: Make sure economy.json file has write permissions!
+# The bot will create this file automatically on first run.
+# BACKUP economy.json regularly to prevent data loss!
+
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -202,11 +255,11 @@ def parse_amount(amount_str, user_id, use_cash=True):
 async def addmoney(ctx, member: discord.Member, amount: int):
     """Admin only - Add money to a user"""
     if not is_admin(ctx):
-        await ctx.send("❌ You don't have permission to use this command!")
+        await send_response(ctx, "❌ You don't have permission to use this command!")
         return
     
     if amount <= 0:
-        await ctx.send("❌ Amount must be positive!")
+        await send_response(ctx, "❌ Amount must be positive!")
         return
     
     economy.add_cash(member.id, amount)
@@ -215,18 +268,18 @@ async def addmoney(ctx, member: discord.Member, amount: int):
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
     embed.description = f"✅ Added **${amount:,}** 💵 to {member.mention}'s cash!"
     
-    await ctx.send(embed=embed)
+    await send_response(ctx, embed=embed)
 
 
 @bot.command(name='removemoney', aliases=['takemoney'])
 async def removemoney(ctx, member: discord.Member, amount: int):
     """Admin only - Remove money from a user"""
     if not is_admin(ctx):
-        await ctx.send("❌ You don't have permission to use this command!")
+        await send_response(ctx, "❌ You don't have permission to use this command!")
         return
     
     if amount <= 0:
-        await ctx.send("❌ Amount must be positive!")
+        await send_response(ctx, "❌ Amount must be positive!")
         return
     
     economy.remove_cash(member.id, amount)
@@ -235,18 +288,18 @@ async def removemoney(ctx, member: discord.Member, amount: int):
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
     embed.description = f"✅ Removed **${amount:,}** 💵 from {member.mention}'s cash!"
     
-    await ctx.send(embed=embed)
+    await send_response(ctx, embed=embed)
 
 
 @bot.command(name='setmoney')
 async def setmoney(ctx, member: discord.Member, amount: int):
     """Admin only - Set a user's money"""
     if not is_admin(ctx):
-        await ctx.send("❌ You don't have permission to use this command!")
+        await send_response(ctx, "❌ You don't have permission to use this command!")
         return
     
     if amount < 0:
-        await ctx.send("❌ Amount cannot be negative!")
+        await send_response(ctx, "❌ Amount cannot be negative!")
         return
     
     user_id = str(member.id)
@@ -258,7 +311,7 @@ async def setmoney(ctx, member: discord.Member, amount: int):
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
     embed.description = f"✅ Set {member.mention}'s cash to **${amount:,}** 💵!"
     
-    await ctx.send(embed=embed)
+    await send_response(ctx, embed=embed)
 
 
 # ============================================================================
@@ -280,7 +333,7 @@ async def balance(ctx, member: Optional[discord.Member] = None):
     embed.add_field(name="🏦 Bank", value=f"${bank:,}", inline=True)
     embed.add_field(name="💰 Total", value=f"${total:,}", inline=True)
     
-    await ctx.send(embed=embed)
+    await send_response(ctx, embed=embed)
 
 
 @bot.command(name='top', aliases=['lb', 'leaderboard'])
@@ -1587,3 +1640,4 @@ async def help_command(ctx):
 if __name__ == "__main__":
     TOKEN = os.getenv('DISCORD_TOKEN')
     bot.run(TOKEN)
+  
